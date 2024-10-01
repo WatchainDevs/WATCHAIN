@@ -13,22 +13,22 @@ contract WATCHAIN {
     event deny(address indexed  prod, address indexed val,string msg);
     event rprt(watch indexed  watchinstance,string rep);
     event fees_change(uint256 mint_fee,uint256 transfer_fee,uint256 allow_fee,uint256 deny_fee,uint256 forced_fee,string smg_fees_ch);
-    mapping (address=>mapping (string=>address)) public property;
-    mapping (address=>mapping (address=>bool)) public allowance_vals;
-    mapping (address=>mapping (string=>bool)) public mints;
-    mapping (address=>uint256) public serial_counts;
-    uint256 mint_fee;
-    uint256 transfer_fee;
-    uint256 allow_fee;
-    uint256 official_msg_fee;
-    uint256 deny_fee;
-    address payable minter;
-    function forced_change(string calldata serial,address owner,address prod,string calldata msg_force) public payable {
+    mapping (address=>mapping (string=>address)) public property; //Property register
+    mapping (address=>mapping (address=>bool)) public allowance_vals;//Allowed validators per producer
+    mapping (address=>mapping (string=>bool)) public mints;//Existing Certificates minted
+    mapping (address=>uint256) public serial_counts;//Number of certificates minted per producer
+    uint256 mint_fee;//Fee for minting
+    uint256 transfer_fee;//Fee for transfer
+    uint256 allow_fee;//Fee for allow validators
+    uint256 official_msg_fee;//Fee of official message
+    uint256 deny_fee;//Fee of deny allowance
+    address payable minter;//Minter adress
+    function forced_change(string calldata serial,address owner,address prod,string calldata msg_force) public payable {//Function for force change of property
         require(allowance_vals[prod][msg.sender]==true || prod==msg.sender,"you are not a right validator or the right producer");
         property[prod][serial]=owner;
         emit  change_evt(watch(prod,serial), owner, msg_force);
-    }//torun
-    function mint(string calldata serial,address owner,string calldata msg_mint) public payable {
+    }
+    function mint(string calldata serial,address owner,string calldata msg_mint) public payable {//function for mint certificate
         require(msg.value>=mint_fee,"You must pay almost base mint fee");
         require(mints[msg.sender][serial]!=true,"Already minted");
         if(!mints[msg.sender][serial]){
@@ -38,7 +38,7 @@ contract WATCHAIN {
             emit mint_event(watch(msg.sender,serial),owner,msg_mint);
         }
     }
-    constructor(uint256 m_fee,uint256 t_fee,uint256 a_fee,uint256 d_fee,uint256 ofmsg_fee){
+    constructor(uint256 m_fee,uint256 t_fee,uint256 a_fee,uint256 d_fee,uint256 ofmsg_fee){//Initialize contract setting fees
         minter=payable(msg.sender);
         mint_fee=m_fee;
         transfer_fee=t_fee;
@@ -47,7 +47,7 @@ contract WATCHAIN {
         deny_fee=d_fee;
         emit fees_change(mint_fee, transfer_fee, allow_fee,deny_fee, official_msg_fee,"mint");
     }
-    function change_fees(uint256 m_fee,uint256 t_fee,uint256 a_fee,uint256 d_fee,uint256 ofmsg_fee,string calldata msg_f_c) public{
+    function change_fees(uint256 m_fee,uint256 t_fee,uint256 a_fee,uint256 d_fee,uint256 ofmsg_fee,string calldata msg_f_c) public{//Change fees for users
         require(msg.sender==minter,"You are not minter account");
         mint_fee=m_fee;
         transfer_fee=t_fee;
@@ -56,12 +56,12 @@ contract WATCHAIN {
         deny_fee=d_fee;
         emit fees_change(mint_fee, transfer_fee, allow_fee,deny_fee, official_msg_fee,msg_f_c);
     }
-    function widthdrawal(uint256 amount) public {
+    function widthdrawal(uint256 amount) public {//Widthawal only avaiable for devs
         require(msg.sender==minter,"You must be the owner of contract to widthdrawal ether");
         require(address (this).balance>amount,"Contract cannot transfer this amount");
         minter.transfer(amount);
     }
-    function transfer(string calldata serial,address receiever,address prod,string calldata msg_trasnfer) public payable {
+    function transfer(string calldata serial,address receiever,address prod,string calldata msg_trasnfer) public payable {//Transfer certificate
         require(msg.value>=transfer_fee,"You must pay almost base transfer fee");
         require(receiever!=msg.sender,"You cannot send to yourself a watch guarantee");
         require(mints[prod][serial]==true,"Watch not minted");
@@ -69,22 +69,22 @@ contract WATCHAIN {
         property[prod][serial]=receiever;
         emit transfer_event(msg.sender, receiever,watch(prod,serial), msg_trasnfer);
     }
-    function check_p(address prod,string calldata serial) public view returns (address){
+    function check_p(address prod,string calldata serial) public view returns (address){//Check property of a  watch
         return property[prod][serial];
     }
-    function allow_validator(address validator,string calldata msg_allow) public payable {
+    function allow_validator(address validator,string calldata msg_allow) public payable {//Allow a validator to manage producer's watches
         require(msg.value>=allow_fee,"You must pay almost base allow fee");
         require(validator!=msg.sender,"you cannot allow yourself");
         allowance_vals[msg.sender][validator]=true;
         emit allow(msg.sender, validator, msg_allow);
     }
-    function deny_validator(address validator,string calldata msg_deny) public payable {
+    function deny_validator(address validator,string calldata msg_deny) public payable {//Revoke validator of its previous allowance
         require(msg.value>=deny_fee,"You must pay almost base deny fee");
         require(validator!=msg.sender,"you cannot deny allowance yourself");
         allowance_vals[msg.sender][validator]=false;
         emit deny(msg.sender, validator, msg_deny);
     }
-    function report(string calldata mesg,string calldata serial,address prod) public payable {
+    function report(string calldata mesg,string calldata serial,address prod) public payable {//Add message to a certain watch make paying if sender is a allowed validator
         bool val=allowance_vals[prod][msg.sender] && msg.value>official_msg_fee;
         require(val || !allowance_vals[prod][msg.sender] || prod==msg.sender,"If you are validator you must pay for official msg");
         emit rprt(watch(prod,serial), mesg);
