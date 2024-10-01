@@ -11,4 +11,3 @@ This project offers a solution for generating and verifying certificates of auth
 - **Proof of Ownership**: The certificate serves as proof of ownership and can be transferred securely between parties, but only through validator approval.
 - **Verification**: Anyone can verify the authenticity of a watch by querying the blockchain for its certificate.
 - **Immutable Records**: Once a certificate is issued, it is permanently recorded on the blockchain and cannot be altered by unauthorized parties.
-- **Controlled Transfers**: Ownership transfers are only allowed when approved by the validators assigned by the producer.
